@@ -56,7 +56,10 @@ func main() {
 	m := image.NewRGBA(image.Rect(0, 0, width, height))
 	draw.Draw(m, m.Bounds(), &image.Uniform{bgcolor}, image.ZP, draw.Src)
 
-	drawLine(m, 10, 10, 400, 450)
+	drawLine(m, 10, 10, 10, 400)
+	drawLine(m, 10, 400, 400, 400)
+	drawLine(m, 400, 400, 400, 10)
+	drawLine(m, 400, 10, 10, 10)
 
 	file, err := os.Create(filename)
 	if err != nil {
