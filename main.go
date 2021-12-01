@@ -13,9 +13,9 @@ import (
 
 // パレットサイズと作成した画像を保存する場所
 var (
-	width    int    = 500
-	height   int    = 500
-	filename string = "line.png"
+	width    float64 = 500
+	height   float64 = 500
+	filename string  = "line.png"
 )
 
 // 背景色とラインカラー
@@ -23,6 +23,11 @@ var (
 	bgcolor   color.Color = color.RGBA{255, 255, 255, 255}
 	linecolor color.Color = color.RGBA{0, 0, 0, 0}
 )
+
+type Points struct {
+	X float64
+	Y float64
+}
 
 // 2点を受け取って線を引く
 func drawLine(m *image.RGBA, x1, y1, x2, y2 float64) {
@@ -43,23 +48,45 @@ func drawLine(m *image.RGBA, x1, y1, x2, y2 float64) {
 		// x座標とy座標を計算
 		x := x1 + l*math.Cos(radian)
 		y := y1 + l*math.Sin(radian)
-		fmt.Printf("(x,y): (%f,%f)\n", x, y)
+		// fmt.Printf("(x,y): (%f,%f)\n", x, y)
 
 		// ビットマップ外の点は描写しない
-		if (x >= 0 && int(x) < width) && (y >= 0 && int(y) < height) {
+		if (x >= 0 && x < width) && (y >= 0 && y < height) {
 			m.Set(int(x), int(y), linecolor)
 		}
 	}
 }
 
+func pentagon() []Points {
+	// 頂点の数
+	vertexNum := 5.0
+
+	// 中心から頂点までの距離
+	R := width / 2.0
+	radian := math.Pi * 2 / vertexNum
+
+	// 中心のx,y座標
+	centerX := width / 2.0
+	centerY := height / 2.0
+
+	var points []Points
+	for i := 0.0; i < vertexNum; i++ {
+		x := centerX + R*math.Cos(radian*i)
+		y := centerY + R*math.Sin(radian*i)
+		points = append(points, Points{x, y})
+	}
+
+	return points
+}
+
 func main() {
-	m := image.NewRGBA(image.Rect(0, 0, width, height))
+	m := image.NewRGBA(image.Rect(0, 0, int(width), int(height)))
 	draw.Draw(m, m.Bounds(), &image.Uniform{bgcolor}, image.ZP, draw.Src)
 
-	drawLine(m, 10, 10, 10, 400)
-	drawLine(m, 10, 400, 400, 400)
-	drawLine(m, 400, 400, 400, 10)
-	drawLine(m, 400, 10, 10, 10)
+	points := pentagon()
+	for _, p := range points {
+		drawLine(m, 250, 250, p.X, p.Y)
+	}
 
 	file, err := os.Create(filename)
 	if err != nil {
