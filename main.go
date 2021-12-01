@@ -13,9 +13,12 @@ import (
 
 // パレットサイズと作成した画像を保存する場所
 var (
-	width    float64 = 500
-	height   float64 = 500
+	width    float64 = 5000
+	height   float64 = 5000
 	filename string  = "line.png"
+	// 中心のx,y座標
+	centerX float64
+	centerY float64
 )
 
 // 背景色とラインカラー
@@ -27,6 +30,11 @@ var (
 type Points struct {
 	X float64
 	Y float64
+}
+
+func init() {
+	centerX = width / 2.0
+	centerY = height / 2.0
 }
 
 // 2点を受け取って線を引く
@@ -65,10 +73,6 @@ func pentagonOutside() []Points {
 	R := width / 2.0
 	radian := math.Pi * 2 / vertexNum
 
-	// 中心のx,y座標
-	centerX := width / 2.0
-	centerY := height / 2.0
-
 	var points []Points
 	for i := 0.0; i < vertexNum; i++ {
 		x := centerX + R*math.Cos(radian*i)
@@ -87,10 +91,6 @@ func pentagonInside() []Points {
 	R := width / 4.0
 	radian := math.Pi / vertexNum
 
-	// 中心のx,y座標
-	centerX := width / 2.0
-	centerY := height / 2.0
-
 	var points []Points
 	for i := 1.0; i < vertexNum*2; i = i + 2 {
 		x := centerX + R*math.Cos(radian*i)
@@ -106,12 +106,12 @@ func main() {
 
 	pointsOutside := pentagonOutside()
 	for _, p := range pointsOutside {
-		drawLine(m, 250, 250, p.X, p.Y)
+		drawLine(m, centerX, centerY, p.X, p.Y)
 	}
 
 	pointsInside := pentagonInside()
 	for _, p := range pointsInside {
-		drawLine(m, 250, 250, p.X, p.Y)
+		drawLine(m, centerX, centerY, p.X, p.Y)
 	}
 	file, err := os.Create(filename)
 	if err != nil {
