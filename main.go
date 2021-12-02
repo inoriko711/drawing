@@ -65,12 +65,15 @@ func drawLine(m *image.RGBA, x1, y1, x2, y2 float64) {
 	}
 }
 
+// 星の外側の頂点座標を求める
 func pentagonOutside() []Points {
 	// 頂点の数
 	vertexNum := 5.0
 
 	// 中心から頂点までの距離
 	R := width / 2.0
+
+	// 中心から頂点への直線同士が成す角度
 	radian := math.Pi * 2 / vertexNum
 
 	var points []Points
@@ -83,16 +86,19 @@ func pentagonOutside() []Points {
 	return points
 }
 
+// 星の内側の頂点座標を求める
 func pentagonInside() []Points {
 	// 頂点の数
 	vertexNum := 5.0
 
 	// 中心から頂点までの距離
 	R := width / 4.0
+
+	// 外側の1/2の角度を求める
 	radian := math.Pi / vertexNum
 
 	var points []Points
-	for i := 1.0; i < vertexNum*2; i = i + 2 {
+	for i := 1.0; i < vertexNum*2; i = i + 2 { // 外側と角度をずらしつつ幅を揃える
 		x := centerX + R*math.Cos(radian*i)
 		y := centerY + R*math.Sin(radian*i)
 		points = append(points, Points{x, y})
@@ -100,6 +106,7 @@ func pentagonInside() []Points {
 
 	return points
 }
+
 func main() {
 	m := image.NewRGBA(image.Rect(0, 0, int(width), int(height)))
 	draw.Draw(m, m.Bounds(), &image.Uniform{bgcolor}, image.ZP, draw.Src)
