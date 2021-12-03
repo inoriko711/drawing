@@ -13,9 +13,9 @@ import (
 
 // パレットサイズと作成した画像を保存する場所
 var (
-	width    float64 = 5000
-	height   float64 = 5000
-	filename string  = "line.png"
+	width    float64 = 1000
+	height   float64 = 1000
+	filename string  = "star.png"
 	// 中心のx,y座標
 	centerX float64
 	centerY float64
@@ -112,14 +112,20 @@ func main() {
 	draw.Draw(m, m.Bounds(), &image.Uniform{bgcolor}, image.ZP, draw.Src)
 
 	pointsOutside := pentagonOutside()
-	for _, p := range pointsOutside {
-		drawLine(m, centerX, centerY, p.X, p.Y)
-	}
 
 	pointsInside := pentagonInside()
-	for _, p := range pointsInside {
-		drawLine(m, centerX, centerY, p.X, p.Y)
+
+	for i := 0; i < len(pointsOutside); i++ {
+		drawLine(m, pointsOutside[i].X, pointsOutside[i].Y, pointsInside[i].X, pointsInside[i].Y)
+
+		if i+1 == len(pointsOutside) {
+			// pointsInsideの最後の点はpointsOutsideの最初の点につなげる
+			drawLine(m, pointsInside[i].X, pointsInside[i].Y, pointsOutside[0].X, pointsOutside[0].Y)
+		} else {
+			drawLine(m, pointsInside[i].X, pointsInside[i].Y, pointsOutside[i+1].X, pointsOutside[i+1].Y)
+		}
 	}
+
 	file, err := os.Create(filename)
 	if err != nil {
 		log.Fatal(err)
