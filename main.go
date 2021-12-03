@@ -109,6 +109,20 @@ func pentagonInside() []Point {
 	return points
 }
 
+// Sliceの重複を削除する
+func deleteDuplicate(old []DrawPoint) []DrawPoint {
+	m := make(map[DrawPoint]bool)
+	var new []DrawPoint
+
+	for _, point := range old {
+		if !m[point] {
+			m[point] = true
+			new = append(new, point)
+		}
+	}
+	return new
+}
+
 func main() {
 	m := image.NewRGBA(image.Rect(0, 0, int(width), int(height)))
 	draw.Draw(m, m.Bounds(), &image.Uniform{bgcolor}, image.ZP, draw.Src)
@@ -129,6 +143,8 @@ func main() {
 		}
 	}
 
+	// 星の外側を描く
+	drawPoints = deleteDuplicate(drawPoints)
 	for _, points := range drawPoints {
 		m.Set(points.X, points.Y, linecolor)
 	}
