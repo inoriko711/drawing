@@ -33,8 +33,9 @@ type Point struct {
 }
 
 type DrawPoint struct {
-	X int
-	Y int
+	X     int
+	Y     int
+	Color color.Color
 }
 
 func init() {
@@ -43,7 +44,7 @@ func init() {
 }
 
 // 2点を受け取ってその間の座標を返す
-func getCoordinates(x1, y1, x2, y2 float64) []DrawPoint {
+func getCoordinates(x1, y1, x2, y2 float64) []Point {
 	dx := x2 - x1
 	dy := y2 - y1
 
@@ -53,7 +54,7 @@ func getCoordinates(x1, y1, x2, y2 float64) []DrawPoint {
 	// ラジアン
 	radian := math.Atan2(dy, dx)
 
-	var points []DrawPoint
+	var points []Point
 	for l := 0.0; l < length; l++ {
 		// x座標とy座標を計算
 		x := x1 + l*math.Cos(radian)
@@ -61,7 +62,7 @@ func getCoordinates(x1, y1, x2, y2 float64) []DrawPoint {
 
 		// ビットマップ外の点は描写しない
 		if (x >= 0 && x < width) && (y >= 0 && y < height) {
-			points = append(points, DrawPoint{X: int(x), Y: int(y)})
+			points = append(points, Point{x, y})
 		}
 	}
 
@@ -124,6 +125,14 @@ func deleteDuplicate(old []DrawPoint) []DrawPoint {
 	return new
 }
 
+func convertPint2DrawPoint(points []Point, color color.Color) []DrawPoint {
+	var drawPoints []DrawPoint
+	for _, p := range points {
+		drawPoints = append(drawPoints, DrawPoint{int(math.Round(p.X)), int(math.Round(p.Y)), color})
+	}
+	return deleteDuplicate(drawPoints)
+}
+
 func main() {
 	m := image.NewRGBA(image.Rect(0, 0, int(width), int(height)))
 	draw.Draw(m, m.Bounds(), &image.Uniform{bgcolor}, image.ZP, draw.Src)
@@ -132,7 +141,7 @@ func main() {
 	pInside := pentagonInside()
 
 	// 星の外枠の座標を求める
-	var starOutsidePoints []DrawPoint
+	var starOutsidePoints []Point
 	for i := 0; i < len(pOutside); i++ {
 		starOutsidePoints = append(starOutsidePoints, getCoordinates(pOutside[i].X, pOutside[i].Y, pInside[i].X, pInside[i].Y)...)
 
@@ -143,20 +152,21 @@ func main() {
 			starOutsidePoints = append(starOutsidePoints, getCoordinates(pInside[i].X, pInside[i].Y, pOutside[i+1].X, pOutside[i+1].Y)...)
 		}
 	}
-	starOutsidePoints = deleteDuplicate(starOutsidePoints)
 
-	// 星の内側の座標を求める
-	var starInsidePoints []DrawPoint
+	// 雑に星の内側の座標を求める
+	var starInsidePoints []Point
 	for _, p := range starOutsidePoints {
-		starInsidePoints = append(starInsidePoints, getCoordinates(centerX, centerY, float64(p.X), float64(p.Y))...)
+		starInsidePoints = append(starInsidePoints, getCoordinates(centerX, centerY, p.X, p.Y)...)
 	}
-	starInsidePoints = deleteDuplicate(starInsidePoints)
 
-	for _, points := range starInsidePoints {
-		m.Set(points.X, points.Y, starColor)
+	insideDrawPoints := convertPint2DrawPoint(starInsidePoints, starColor)
+	for _, p := range insideDrawPoints {
+		m.Set(p.X, p.Y, p.Color)
 	}
-	for _, points := range starOutsidePoints {
-		m.Set(points.X, points.Y, linecolor)
+
+	outsideDrawPoints := convertPint2DrawPoint(starOutsidePoints, linecolor)
+	for _, p := range outsideDrawPoints {
+		m.Set(p.X, p.Y, p.Color)
 	}
 
 	file, err := os.Create(filename)
