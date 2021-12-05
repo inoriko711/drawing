@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
@@ -8,13 +9,14 @@ import (
 	"log"
 	"math"
 	"os"
+	"sort"
 )
 
 // パレットサイズと作成した画像を保存する場所
 var (
 	width    float64 = 1000
 	height   float64 = 1000
-	filename string  = "paintedStar.png"
+	filename string  = "paintedStar2.png"
 	// 中心のx,y座標
 	centerX float64
 	centerY float64
@@ -85,8 +87,8 @@ func pentagonOutside() []Point {
 		x := centerX + R*math.Cos(radian*i)
 		y := centerY + R*math.Sin(radian*i)
 		points = append(points, Point{x, y})
+		fmt.Printf("外側：(x,y)=(%d,%d)\n", int(math.Round(x)), int(math.Round(y)))
 	}
-
 	return points
 }
 
@@ -106,6 +108,7 @@ func pentagonInside() []Point {
 		x := centerX + R*math.Cos(radian*i)
 		y := centerY + R*math.Sin(radian*i)
 		points = append(points, Point{x, y})
+		fmt.Printf("内側：(x,y)=(%d,%d)\n", int(math.Round(x)), int(math.Round(y)))
 	}
 
 	return points
@@ -122,6 +125,8 @@ func deleteDuplicate(old []DrawPoint) []DrawPoint {
 			new = append(new, point)
 		}
 	}
+
+	sort.Slice(new, func(i, j int) bool { return new[i].X < new[j].X })
 	return new
 }
 
@@ -131,6 +136,15 @@ func convertPint2DrawPoint(points []Point, color color.Color) []DrawPoint {
 		drawPoints = append(drawPoints, DrawPoint{int(math.Round(p.X)), int(math.Round(p.Y)), color})
 	}
 	return deleteDuplicate(drawPoints)
+}
+
+func includePoint(x, y int, points []DrawPoint) bool {
+	for _, p := range points {
+		if x == p.X && y == p.Y {
+			return true
+		}
+	}
+	return false
 }
 
 func main() {
@@ -153,22 +167,56 @@ func main() {
 		}
 	}
 
-	// 雑に星の内側の座標を求める
-	var starInsidePoints []Point
-	for _, p := range starOutsidePoints {
-		starInsidePoints = append(starInsidePoints, getCoordinates(centerX, centerY, p.X, p.Y)...)
-	}
-
-	insideDrawPoints := convertPint2DrawPoint(starInsidePoints, starColor)
-	for _, p := range insideDrawPoints {
-		m.Set(p.X, p.Y, p.Color)
-	}
-
+	// 星の外枠の座標
 	outsideDrawPoints := convertPint2DrawPoint(starOutsidePoints, linecolor)
-	for _, p := range outsideDrawPoints {
-		m.Set(p.X, p.Y, p.Color)
+
+	var drawPoint []DrawPoint
+	for x := 0; x <= int(width); x++ {
+		isStar := false
+		beforePointColor := bgcolor
+
+		for y := 0; y <= int(height); y++ {
+			isLine := includePoint(x, y, outsideDrawPoints)
+			// もしライン上の点だったらbeforePointColorをライン色に変えて次の点を確認する
+			if isLine {
+				isLine = true
+				beforePointColor = linecolor
+				drawPoint = append(drawPoint, DrawPoint{x, y, linecolor})
+				continue
+			}
+
+			// 直前がラインのとき、isStarを反転させる
+			if beforePointColor == linecolor {
+				isStar = !isStar
+
+				if x == int(width) { // 頂点処理
+					isStar = false
+				} else if x == 250 && y == 502 { // 内側向き頂点処理
+					isStar = true
+				} else if x < int(centerX) && y <= int(centerY) {
+					if includePoint(x+1, y+1, outsideDrawPoints) {
+						isStar = false
+					}
+				} else if x < int(centerX) && y > int(centerY) {
+					if includePoint(x+1, y-1, outsideDrawPoints) {
+						isStar = false
+					}
+				}
+			}
+
+			if isStar {
+				drawPoint = append(drawPoint, DrawPoint{x, y, starColor})
+				beforePointColor = starColor
+			} else {
+				drawPoint = append(drawPoint, DrawPoint{x, y, bgcolor})
+				beforePointColor = bgcolor
+			}
+		}
 	}
 
+	for _, p := range drawPoint {
+		m.Set(p.X, p.Y, p.Color)
+	}
 	file, err := os.Create(filename)
 	if err != nil {
 		log.Fatal(err)
