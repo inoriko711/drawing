@@ -189,9 +189,9 @@ func main() {
 			if beforePointColor == linecolor {
 				isStar = !isStar
 
-				if x == int(width) { // 頂点処理
+				if x == int(width) || x == int(width)-1 { // TODO頂点処理
 					isStar = false
-				} else if x == 250 && y == 502 { // 内側向き頂点処理
+				} else if x == 250 && y == 502 { // TODO 内側向き頂点処理
 					isStar = true
 				} else if x < int(centerX) && y <= int(centerY) {
 					if includePoint(x+1, y+1, outsideDrawPoints) {
