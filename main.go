@@ -5,11 +5,14 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	"image/gif"
 	"image/png"
 	"log"
 	"math"
 	"os"
 	"sort"
+
+	"github.com/soniakeys/quant/median"
 )
 
 // パレットサイズと作成した画像を保存する場所
@@ -24,9 +27,10 @@ var (
 
 // 背景色とラインカラー
 var (
-	bgcolor   color.Color = color.RGBA{255, 255, 255, 255}
+	bgcolor   color.Color = color.RGBA{0, 0, 64, 255}
 	linecolor color.Color = color.RGBA{0, 0, 0, 0}
-	starColor color.Color = color.RGBA{255, 215, 0, 255}
+	// -25,-21,+6
+	starColor color.Color = color.RGBA{255, 215, 6, 255}
 )
 
 type Point struct {
@@ -38,6 +42,11 @@ type DrawPoint struct {
 	X     int
 	Y     int
 	Color color.Color
+}
+
+type LinePoint struct {
+	FromY int
+	ToY   int
 }
 
 func init() {
@@ -173,13 +182,13 @@ func main() {
 	var drawPoint []DrawPoint
 	for x := 0; x <= int(width); x++ {
 		isStar := false
+
 		beforePointColor := bgcolor
 
 		for y := 0; y <= int(height); y++ {
 			isLine := includePoint(x, y, outsideDrawPoints)
 			// もしライン上の点だったらbeforePointColorをライン色に変えて次の点を確認する
 			if isLine {
-				isLine = true
 				beforePointColor = linecolor
 				drawPoint = append(drawPoint, DrawPoint{x, y, linecolor})
 				continue
@@ -189,6 +198,7 @@ func main() {
 			if beforePointColor == linecolor {
 				isStar = !isStar
 
+				// TODO x軸上にラインがのこりいくつ有るか調べたらいいのでは
 				if x == int(width) || x == int(width)-1 { // TODO頂点処理
 					isStar = false
 				} else if x == 250 && y == 502 { // TODO 内側向き頂点処理
@@ -227,4 +237,58 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// 動画を作成する
+	files := []string{
+		"images/1.png",
+		"images/2.png",
+		"images/3.png",
+		"images/4.png",
+		"images/5.png",
+		"images/6.png",
+		"images/7.png",
+		"images/8.png",
+		"images/9.png",
+		"images/10.png",
+		"images/11.png",
+		"images/10.png",
+		"images/9.png",
+		"images/8.png",
+		"images/7.png",
+		"images/6.png",
+		"images/5.png",
+		"images/4.png",
+		"images/3.png",
+		"images/2.png",
+	}
+
+	// 各フレームの画像を GIF で読み込んで outGif を構築する
+	outGif := &gif.GIF{}
+	for _, name := range files {
+		f, err := os.Open(name)
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+		defer f.Close()
+
+		// image.Imageへとデコード
+		img, err := png.Decode(f)
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+		q := median.Quantizer(256)
+		p := q.Quantize(make(color.Palette, 0, 256), img)
+		paletted := image.NewPaletted(img.Bounds(), p)
+		draw.FloydSteinberg.Draw(paletted, img.Bounds(), img, image.Point{})
+
+		outGif.Image = append(outGif.Image, paletted)
+		outGif.Delay = append(outGif.Delay, 0)
+	}
+
+	// out.gif に保存する
+	f, _ := os.OpenFile("out.gif", os.O_WRONLY|os.O_CREATE, 0600)
+	defer f.Close()
+	gif.EncodeAll(f, outGif)
 }
