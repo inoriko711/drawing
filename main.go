@@ -19,7 +19,7 @@ import (
 var (
 	width    float64 = 1000
 	height   float64 = 1000
-	filename string  = "paintedStar2.png"
+	filename string  = "paintedStarAtNight.png"
 	// 中心のx,y座標
 	centerX float64
 	centerY float64
@@ -30,7 +30,7 @@ var (
 	bgcolor   color.Color = color.RGBA{0, 0, 64, 255}
 	linecolor color.Color = color.RGBA{0, 0, 0, 0}
 	// -25,-21,+6
-	starColor color.Color = color.RGBA{255, 215, 6, 255}
+	starColor color.Color = color.RGBA{255, 215, 0, 255}
 )
 
 type Point struct {
@@ -135,7 +135,13 @@ func deleteDuplicate(old []DrawPoint) []DrawPoint {
 		}
 	}
 
-	sort.Slice(new, func(i, j int) bool { return new[i].X < new[j].X })
+	sort.Slice(new, func(i, j int) bool {
+		if new[i].X == new[j].X {
+			return new[i].Y < new[j].Y
+		}
+		return new[i].X < new[j].X
+	})
+
 	return new
 }
 
@@ -181,45 +187,103 @@ func main() {
 
 	var drawPoint []DrawPoint
 	for x := 0; x <= int(width); x++ {
-		isStar := false
 
-		beforePointColor := bgcolor
+		// 直前のマスがライン上かどうか保持する変数
+		isLine := false
+		yTo := 0
+		yFrom := 0
+		var linePoints []LinePoint
+
+		// 星の枠線のy座標を求める
+		for y := 0; y <= int(height); y++ {
+			if !isLine && includePoint(x, y, outsideDrawPoints) {
+				yFrom = y
+				yTo = y
+				isLine = true
+			} else if isLine && includePoint(x, y, outsideDrawPoints) {
+				yTo = y
+			} else if isLine && !includePoint(x, y, outsideDrawPoints) {
+				linePoints = append(linePoints, LinePoint{yFrom, yTo})
+				isLine = false
+			}
+		}
 
 		for y := 0; y <= int(height); y++ {
-			isLine := includePoint(x, y, outsideDrawPoints)
-			// もしライン上の点だったらbeforePointColorをライン色に変えて次の点を確認する
-			if isLine {
-				beforePointColor = linecolor
-				drawPoint = append(drawPoint, DrawPoint{x, y, linecolor})
-				continue
-			}
-
-			// 直前がラインのとき、isStarを反転させる
-			if beforePointColor == linecolor {
-				isStar = !isStar
-
-				// TODO x軸上にラインがのこりいくつ有るか調べたらいいのでは
-				if x == int(width) || x == int(width)-1 { // TODO頂点処理
-					isStar = false
-				} else if x == 250 && y == 502 { // TODO 内側向き頂点処理
-					isStar = true
-				} else if x < int(centerX) && y <= int(centerY) {
-					if includePoint(x+1, y+1, outsideDrawPoints) {
-						isStar = false
+			color := bgcolor
+			switch len(linePoints) {
+			case 0:
+				drawPoint = append(drawPoint, DrawPoint{x, y, bgcolor})
+			case 1:
+				if y >= linePoints[0].FromY && y <= linePoints[0].ToY {
+					color = linecolor
+				}
+				drawPoint = append(drawPoint, DrawPoint{x, y, color})
+			case 2:
+				// 星の頂点にかかるときは2つのラインの間は背景色
+				if x == int(math.Round(pOutside[3].X)) || x == int(math.Round(pOutside[3].X))+1 {
+					if y < linePoints[0].FromY {
+						color = bgcolor
+					} else if y >= linePoints[0].FromY && y <= linePoints[0].ToY {
+						color = linecolor
+					} else if y > linePoints[0].ToY && y < linePoints[1].FromY {
+						color = bgcolor
+					} else if y >= linePoints[1].FromY && y <= linePoints[1].ToY {
+						color = linecolor
+					} else {
+						color = bgcolor
 					}
-				} else if x < int(centerX) && y > int(centerY) {
-					if includePoint(x+1, y-1, outsideDrawPoints) {
-						isStar = false
+				} else {
+					if y < linePoints[0].FromY {
+						color = bgcolor
+					} else if y >= linePoints[0].FromY && y <= linePoints[0].ToY {
+						color = linecolor
+					} else if y > linePoints[0].ToY && y < linePoints[1].FromY {
+						color = starColor
+					} else if y >= linePoints[1].FromY && y <= linePoints[1].ToY {
+						color = linecolor
+					} else {
+						color = bgcolor
 					}
 				}
-			}
-
-			if isStar {
-				drawPoint = append(drawPoint, DrawPoint{x, y, starColor})
-				beforePointColor = starColor
-			} else {
-				drawPoint = append(drawPoint, DrawPoint{x, y, bgcolor})
-				beforePointColor = bgcolor
+				drawPoint = append(drawPoint, DrawPoint{x, y, color})
+			case 3:
+				if y < linePoints[0].FromY {
+					color = bgcolor
+				} else if y >= linePoints[0].FromY && y <= linePoints[0].ToY {
+					color = linecolor
+				} else if y > linePoints[0].ToY && y < linePoints[1].FromY {
+					color = starColor
+				} else if y >= linePoints[1].FromY && y <= linePoints[1].ToY {
+					color = linecolor
+				} else if y > linePoints[1].ToY && y < linePoints[2].FromY {
+					color = starColor
+				} else if y >= linePoints[2].FromY && y <= linePoints[2].ToY {
+					color = linecolor
+				} else {
+					color = bgcolor
+				}
+				drawPoint = append(drawPoint, DrawPoint{x, y, color})
+			case 4:
+				if y < linePoints[0].FromY {
+					color = bgcolor
+				} else if y >= linePoints[0].FromY && y <= linePoints[0].ToY {
+					color = linecolor
+				} else if y > linePoints[0].ToY && y < linePoints[1].FromY {
+					color = starColor
+				} else if y >= linePoints[1].FromY && y <= linePoints[1].ToY {
+					color = linecolor
+				} else if y > linePoints[1].ToY && y < linePoints[2].FromY {
+					color = bgcolor
+				} else if y >= linePoints[2].FromY && y <= linePoints[2].ToY {
+					color = linecolor
+				} else if y > linePoints[2].ToY && y < linePoints[3].FromY {
+					color = starColor
+				} else if y >= linePoints[3].FromY && y <= linePoints[3].ToY {
+					color = linecolor
+				} else {
+					color = bgcolor
+				}
+				drawPoint = append(drawPoint, DrawPoint{x, y, color})
 			}
 		}
 	}
