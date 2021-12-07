@@ -12,45 +12,93 @@ import (
 	"github.com/soniakeys/quant/median"
 )
 
-func main() {
-	star := newStar(
-		1000,
-		1000,
-		"20211208.png",
-		color.RGBA{255, 255, 255, 255},
-		color.RGBA{0, 0, 0, 0},
-		color.RGBA{255, 215, 0, 255},
-	)
-	star.drawStar()
+// StarImage 画像・動画を生成する上で変更したい値を定義しておく構造体
+type StarImage struct {
+	filename  string
+	bgColor   color.Color
+	starColor color.Color
+}
 
-	// 動画を作成する
-	files := []string{
-		"images/1.png",
-		"images/2.png",
-		"images/3.png",
-		"images/4.png",
-		"images/5.png",
-		"images/6.png",
-		"images/7.png",
-		"images/8.png",
-		"images/9.png",
-		"images/10.png",
-		"images/11.png",
-		"images/10.png",
-		"images/9.png",
-		"images/8.png",
-		"images/7.png",
-		"images/6.png",
-		"images/5.png",
-		"images/4.png",
-		"images/3.png",
-		"images/2.png",
+func main() {
+	files := []*StarImage{
+		{
+			filename:  "20211208/1.png",
+			bgColor:   color.RGBA{0, 0, 64, 255},
+			starColor: color.RGBA{230, 0, 18, 255},
+		},
+		{
+			filename:  "20211208/2.png",
+			bgColor:   color.RGBA{0, 0, 64, 255},
+			starColor: color.RGBA{243, 152, 0, 255},
+		},
+		{
+			filename:  "20211208/3.png",
+			bgColor:   color.RGBA{0, 0, 64, 255},
+			starColor: color.RGBA{255, 251, 0, 255},
+		},
+		{
+			filename:  "20211208/4.png",
+			bgColor:   color.RGBA{0, 0, 64, 255},
+			starColor: color.RGBA{143, 195, 31, 255},
+		},
+		{
+			filename:  "20211208/5.png",
+			bgColor:   color.RGBA{0, 0, 64, 255},
+			starColor: color.RGBA{0, 153, 68, 255},
+		},
+		{
+			filename:  "20211208/6.png",
+			bgColor:   color.RGBA{0, 0, 64, 255},
+			starColor: color.RGBA{0, 158, 150, 255},
+		},
+		{
+			filename:  "20211208/7.png",
+			bgColor:   color.RGBA{0, 0, 64, 255},
+			starColor: color.RGBA{0, 160, 233, 255},
+		},
+		{
+			filename:  "20211208/8.png",
+			bgColor:   color.RGBA{0, 0, 64, 255},
+			starColor: color.RGBA{0, 104, 183, 255},
+		},
+		{
+			filename:  "20211208/9.png",
+			bgColor:   color.RGBA{0, 0, 64, 255},
+			starColor: color.RGBA{29, 32, 136, 255},
+		},
+		{
+			filename:  "20211208/10.png",
+			bgColor:   color.RGBA{0, 0, 64, 255},
+			starColor: color.RGBA{146, 7, 131, 255},
+		},
+		{
+			filename:  "20211208/11.png",
+			bgColor:   color.RGBA{0, 0, 64, 255},
+			starColor: color.RGBA{228, 0, 127, 255},
+		},
+		{
+			filename:  "20211208/12.png",
+			bgColor:   color.RGBA{0, 0, 64, 255},
+			starColor: color.RGBA{229, 0, 79, 255},
+		},
+	}
+
+	for _, f := range files {
+		star := newStar(
+			1000,
+			1000,
+			f.filename,
+			f.bgColor,
+			color.RGBA{0, 0, 0, 0},
+			f.starColor,
+		)
+		star.drawStar()
 	}
 
 	// 各フレームの画像を GIF で読み込んで outGif を構築する
 	outGif := &gif.GIF{}
-	for _, name := range files {
-		f, err := os.Open(name)
+	for _, f := range files {
+		f, err := os.Open(f.filename)
 		if err != nil {
 			log.Fatal(err)
 			return
@@ -73,7 +121,11 @@ func main() {
 	}
 
 	// out.gif に保存する
-	f, _ := os.OpenFile("out.gif", os.O_WRONLY|os.O_CREATE, 0600)
+	f, _ := os.OpenFile("20211208/out.gif", os.O_WRONLY|os.O_CREATE, 0600)
 	defer f.Close()
-	gif.EncodeAll(f, outGif)
+
+	err := gif.EncodeAll(f, outGif)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
