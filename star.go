@@ -53,13 +53,13 @@ func (s *Star) drawStar() {
 	// 星の外枠の座標を求める
 	var starOutsidePoints []*Point
 	for i := 0; i < len(pOutside); i++ {
-		starOutsidePoints = append(starOutsidePoints, s.getCoordinates(pOutside[i].X, pOutside[i].Y, pInside[i].X, pInside[i].Y)...)
+		starOutsidePoints = append(starOutsidePoints, s.getCoordinates(pOutside[i], pInside[i])...)
 
 		if i+1 == len(pOutside) {
 			// pointsInsideの最後の点はpointsOutsideの最初の点につなげる
-			starOutsidePoints = append(starOutsidePoints, s.getCoordinates(pInside[i].X, pInside[i].Y, pOutside[0].X, pOutside[0].Y)...)
+			starOutsidePoints = append(starOutsidePoints, s.getCoordinates(pInside[i], pOutside[0])...)
 		} else {
-			starOutsidePoints = append(starOutsidePoints, s.getCoordinates(pInside[i].X, pInside[i].Y, pOutside[i+1].X, pOutside[i+1].Y)...)
+			starOutsidePoints = append(starOutsidePoints, s.getCoordinates(pInside[i], pOutside[i+1])...)
 		}
 	}
 
@@ -144,9 +144,9 @@ func (s *Star) pentagonInside() []*Point {
 }
 
 // 2点を受け取ってその間の座標を返す
-func (s *Star) getCoordinates(x1, y1, x2, y2 float64) []*Point {
-	dx := x2 - x1
-	dy := y2 - y1
+func (s *Star) getCoordinates(xy1, xy2 *Point) []*Point {
+	dx := xy2.X - xy1.X
+	dy := xy2.Y - xy1.Y
 
 	// 距離
 	length := math.Sqrt(dx*dx + dy*dy)
@@ -154,11 +154,13 @@ func (s *Star) getCoordinates(x1, y1, x2, y2 float64) []*Point {
 	// ラジアン
 	radian := math.Atan2(dy, dx)
 
+	// 2点間の座標を格納するスライス
 	var points []*Point
+
 	for l := 0.0; l < length; l++ {
 		// x座標とy座標を計算
-		x := x1 + l*math.Cos(radian)
-		y := y1 + l*math.Sin(radian)
+		x := xy1.X + l*math.Cos(radian)
+		y := xy1.Y + l*math.Sin(radian)
 
 		// ビットマップ外の点は描写しない
 		if (x >= 0 && x < s.width) && (y >= 0 && y < s.height) {
@@ -169,6 +171,8 @@ func (s *Star) getCoordinates(x1, y1, x2, y2 float64) []*Point {
 	return points
 }
 
+// float64で定義されている座標(Point型)の一覧とその座標群の色を受け取り、DrawPoint型に詰め直して返す
+// 同時に重複も削除する
 func (s *Star) convertPint2DrawPoint(points []*Point, color color.Color) []*DrawPoint {
 	var drawPoints []*DrawPoint
 	for _, p := range points {
@@ -177,7 +181,7 @@ func (s *Star) convertPint2DrawPoint(points []*Point, color color.Color) []*Draw
 	return s.deleteDuplicate(drawPoints)
 }
 
-// Sliceの重複を削除する
+// Sliceの重複を削除、x軸→y軸の値の昇順にソートする
 func (s *Star) deleteDuplicate(old []*DrawPoint) []*DrawPoint {
 	m := make(map[DrawPoint]bool)
 	var new []*DrawPoint
@@ -312,6 +316,8 @@ func (s *Star) registerColor(outsideDrawPoints []*DrawPoint, pOutside []*Point) 
 
 	return drawPoints
 }
+
+// (x,y)が[]*DrawPointに含まれているかどうかを判定する
 func (s *Star) includePoint(x, y int, points []*DrawPoint) bool {
 	for _, p := range points {
 		if x == p.X && y == p.Y {
