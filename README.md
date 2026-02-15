@@ -5,7 +5,9 @@
 https://qiita.com/inoriko711/items/289766bd1088faa406d8
 
 
-# drawing
+# 動かし方
+git cloneで手元に持ってきてから、以下を実行してください。
 ```
 go run main.go star.go
 ```
+日付のフォルダができます。その中にあるout.gifがきらめく星です。
